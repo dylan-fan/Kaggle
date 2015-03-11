@@ -1,0 +1,20 @@
+{    
+    "train_path":      "../data/train_sample.csv",
+    "test_path":       "../data/test.csv",
+    "model_path":      "../data/model.pickle",
+    "scale_model_path": "../data/scale_model.pickle",
+	"decomposition_model_path" :"../data/decomposition_model.pickle",
+    "submission_path": "../data/submission.csv",
+    "train_feature": "../data/train_feature.csv",
+	"test_feature": "../data/test_feature.csv",
+	"svmlight_format_train":  "../data/svmlight_train.txt",
+    "svmlight_format_test":  "../data/svmlight_test.txt",
+	"svmlight_format_cvtrain":  "../data/svmlight_cvtrain.txt",
+    "svmlight_format_cvtest":  "../data/svmlight_cvtest.txt",
+    "libfm_preds":  "../data/libfm_preds.txt",
+	"temp_test":    "../data/temp_test.txt",
+	"reg_import_feature_ids":  "../data/reg_import_feature_ids.pickle",
+	"clf_import_feature_ids": "../data/clf_import_feature_ids.pickle",
+     "quantile_regression_preds":  "../data/quantile_regression_preds.csv"
+	
+}
