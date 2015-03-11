@@ -56,6 +56,8 @@ def stats_importance_regressor_features():
     X = np.hstack((X,np.array([train_x[:,521] + train_x[:,520]]).T))
     X = np.hstack((X,np.array([train_x[:,521] - train_x[:,271]]).T))
     X = np.hstack((X,np.array([train_x[:,521] + train_x[:,268]]).T))
+    
+   
     X = np.hstack((X,train_x[:,0:train_x.shape[1]]))
     
     
@@ -110,7 +112,7 @@ def stats_importance_classify_features():
     X = np.hstack((X,np.array([train_x[:,521] - train_x[:,271]]).T))
     X = np.hstack((X,np.array([train_x[:,521] + train_x[:,268]]).T))
     
-    X = np.hstack((X,np.array([train_x[:,46] - train_x[:,36]]).T))
+   
     X = np.hstack((X,train_x[:,0:train_x.shape[1]]))
     
     print 'previous impute : train-x size:', X.shape
@@ -128,19 +130,16 @@ def stats_importance_classify_features():
     clf_model = GradientBoostingClassifier(n_estimators=200, learning_rate=0.3,
                                min_samples_split=30, min_samples_leaf= 5)   
     
-    clf_model = LogisticRegression(penalty='l1', dual=False, tol=0.0001, 
-                         C=1e20, fit_intercept=True, intercept_scaling=1.0, 
-                         class_weight='auto', random_state=None)
-#     clf_model.fit(X, train_y_classify)        
-   
-#     feature_importane_sort_li = com_stat.feature_importance_stat(clf_model.feature_importances_)
-#     print feature_importane_sort_li
-#     feature_ids = [fid for fid, imp in feature_importane_sort_li if imp > 1e-5] 
-#     print 'import feature_ids size:', len(feature_ids)
-#         
-#     data_io.save_clf_importanct_features(feature_ids)
-#     X = X[:,feature_ids]
 
+    clf_model.fit(X, train_y_classify)        
+   
+    feature_importane_sort_li = com_stat.feature_importance_stat(clf_model.feature_importances_)
+    print feature_importane_sort_li
+    feature_ids = [fid for fid, imp in feature_importane_sort_li if imp > 1e-5] 
+    print 'import feature_ids size:', len(feature_ids)
+        
+    data_io.save_clf_importanct_features(feature_ids)
+    X = X[:,feature_ids]
     score = cv.cv_loop(X, train_y_classify, clf_model, N= 5)
     print "Mean AUC: %f" % (score)
     
@@ -216,8 +215,7 @@ def get_features(datas, is_test = 0):
     print 'f274:', feature_names.index('f274')
     print 'f527:', feature_names.index('f527')
     
-    print 'f49:', feature_names.index('f49')
-    print 'f39:', feature_names.index('f39')
+    print 'f16:', feature_names.index('f16')
     
     feature_names= ['f527','f528']
     X = np.asarray(datas[feature_names].values, dtype = float)
@@ -246,6 +244,9 @@ def get_clf_features(datas, is_test = 0):
     X = np.hstack((X,np.array([datas[:,521] + datas[:,520]]).T))
     X = np.hstack((X,np.array([datas[:,521] - datas[:,271]]).T))
     X = np.hstack((X,np.array([datas[:,521] + datas[:,268]]).T))
+    
+    
+    
     X = np.hstack((X,datas[:,0:datas.shape[1]]))
     
     
@@ -265,7 +266,7 @@ def get_clf_features(datas, is_test = 0):
     import_feature_ids = data_io.load_clf_importanct_features()  
     
     top_n = len(import_feature_ids)  
-    top_n = 2
+    top_n = 150
     X = X[:,import_feature_ids[:top_n]]   
     
     if not is_test:
@@ -290,6 +291,7 @@ def get_regressor_features(datas, clf_proba = None, is_test = 0, is_decomp = 0):
     X = np.hstack((X,np.array([datas[:,521] + datas[:,520]]).T))
     X = np.hstack((X,np.array([datas[:,521] - datas[:,271]]).T))
     X = np.hstack((X,np.array([datas[:,521] + datas[:,268]]).T))
+    
     X = np.hstack((X,datas[:,0:datas.shape[1]]))  
     
     if clf_proba != None:
@@ -360,167 +362,20 @@ def features_preprocess(X):
     
     for i in range(X.shape[1]):
         f_vals = X[:,i]
-        val_percentile_min = stats.scoreatpercentile(f_vals,1)
-        val_percentile_max = stats.scoreatpercentile(f_vals,99)
+        val_percentile_min = stats.scoreatpercentile(f_vals,0.1)
+        val_percentile_max = stats.scoreatpercentile(f_vals,99.9)
         for j in range(X.shape[0]):
             if X[j,i] < val_percentile_min:
                 X[j,i] = val_percentile_min
             if X[j,i] > val_percentile_max:
-                X[j,i] = val_percentile_max
-        
+                X[j,i] = val_percentile_max        
     
     return X
             
     
     
     
-def get_features_1(datas, is_test = 0):
-    
-    feature_names = list(datas.columns)
-    feature_names.remove('id')
-      
-    print feature_names
-    
-    y_zero = 0
-    n = 0
-    if not is_test:
-        feature_names.remove('loss')
-        y_zero = np.sum([1 if item == 0 else 0 for item in datas['loss'].values])           
-        
-        n = len(datas)
-        
-        
-        print 'train samples are: ',n
-        print 'train samples with y = 0 are: ', y_zero
-        print 'train samples ratio with y = 0 are: ', y_zero/(n + 0.0)
-        
-        train_y = datas['loss'].values
-        
 
-    str_feature_li = ['f11', 'f12',
-                       'f462', 'f463', 'f473', 'f474', 'f602', 'f603', 'f605']
-    
-    print datas['f419'].values
-  
-    
-    for f_name in feature_names:        
-        test_f = datas[f_name].values
-        i = 0
-        for e in test_f:
-            i += 1             
-            if isinstance(e, str):
-                print f_name, i, e
-                str_feature_li.append(f_name)
-                break
-     
-    for f_name in str_feature_li:
-        try:
-            feature_names.remove(f_name)
-        except:
-            continue
-        
-        
-    
-    unrelated_feature_li = []
-    
-    for f_name in feature_names:
-        f_vals = datas[f_name].values
-        f_vals = f_vals[~np.isnan(f_vals)]
-        
-        f_min_val = np.min(f_vals)
-        f_max_val = np.max(f_vals)
-       
-        if f_min_val == f_max_val:
-            unrelated_feature_li.append(f_name)
-            
-    
-    for f_name in unrelated_feature_li:          
-        feature_names.remove(f_name)
-        
-#     str_feature_li = [] 
-#     
-#     for f_name in feature_names:
-#         f_vals = datas[f_name].values
-#         f_vals = f_vals[~np.isnan(f_vals)]
-#         i = 0
-#         for e in f_vals:
-#             i += 1             
-#             if isinstance(e, float) :
-#                 break
-#         
-#         if i < len(f_vals):
-#             continue
-#         
-#         else:
-#             f_min_val = np.min(f_vals)
-#             f_max_val = np.max(f_vals)
-#             f_median_val = np.median(f_vals)
-#             print f_name, f_min_val,f_median_val,f_max_val
-#                         
-#             if f_max_val > 1e9:                
-#                 str_feature_li.append(f_name)
-                  
-#     for f_name in str_feature_li:
-#         feature_names.remove(f_name)
-     
-    print 'features size: ', len(feature_names)  
-    
-    
-    for f_name in feature_names:
-        f_vals = datas[f_name].values
-        
-        
-        mean_val = np.mean(f_vals[~np.isnan(f_vals)])
-        min_val = np.min(f_vals[~np.isnan(f_vals)])
-        median_val = np.median(f_vals[~np.isnan(f_vals)])
-        max_val = np.max(f_vals[~np.isnan(f_vals)])
-        
-        val_5 = stats.scoreatpercentile(f_vals[~np.isnan(f_vals)], 5)
-        
-        default_val =  val_5
-        
-        if max_val > 1e7 :
-            print 'f: max, min, mean, median: ',f_name, max_val,min_val,mean_val, median_val
-            print 'feature vals set len : ',len(set(f_vals[~np.isnan(f_vals)])) 
-        
-        
-        datas[f_name].fillna(default_val,inplace = True)
-    
-   
-    flag = 0
-    for f_name in feature_names:
-        f_vals = datas[f_name].values
-        if np.max(f_vals) > 1e5 and np.min(f_vals) >= 1e-6:
-            f_vals = np.log2(f_vals + 1.0)
-
-        val_percentile_min = stats.scoreatpercentile(f_vals,1)
-        val_percentile_max = stats.scoreatpercentile(f_vals,90)
-       
-        
-        f_vals_adj = []
-        
-        for e in f_vals:
-            adj_val = e             
-            if e < val_percentile_min:
-                adj_val = val_percentile_min
-            if e > val_percentile_max:
-                adj_val = val_percentile_max
-            
-            f_vals_adj.append([adj_val])
-                
-        if flag == 0:
-            X = f_vals_adj
-            flag = 1    
-        
-        else:
-            X = np.hstack((X,f_vals_adj))
-        
-   
-    print X
-    scale_model = StandardScaler()
-    X = scale_model.fit_transform(X)  
-    
-    return X
 
 
 def create_datasets(train_x_regressor_feature, test_x_regressor_feature):    
@@ -556,11 +411,10 @@ def get_dataset(feature_set, train, cv):
     return X, X_test
  
      
-if __name__ == '__main__':    
-    
-#     greedy_classify_features()
-    datas = data_io.read_train()
-    get_features(datas, is_test = 0) 
-    stats_importance_classify_features()
-#     stats_importance_regressor_features()
-    
+if __name__ == '__main__':
+#     datas = data_io.read_train()    
+#     get_features(datas, is_test = 0) 
+#     greedy_classify_features() 
+#     stats_importance_classify_features()
+    stats_importance_regressor_features()
+#     

@@ -24,9 +24,11 @@ def knn_predictor(knn_model,X):
     
 def postprocess_predict(preds, threshold = 5):
     print 'threshold:', threshold
-    preds = [ np.floor(e) if e >= threshold else 0 for e in preds]
-    preds = [ np.floor(e) if e < 98 else 100 for e in preds]
-    return np.asarray(preds)
+    preds = np.asarray(preds)
+    preds[np.where(preds < threshold)[0]] = 0  
+    preds = np.floor(preds)    
+
+    return preds
 
 
 def predictor_normlization(preds):
@@ -59,18 +61,8 @@ def predictor_normlization(preds):
     return preds_norm
     
     
-    
- 
-    
+  
     
     
-    
-    
-    
-    
-    
-    
-    
-if __name__ == '__main__':
-    
-    pass
+if __name__ == '__main__':  
+   pass

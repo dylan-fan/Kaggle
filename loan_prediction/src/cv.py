@@ -23,7 +23,7 @@ from sklearn.linear_model import LinearRegression
 
 from sklearn.ensemble import RandomForestRegressor
 
-# import libfm_process
+import libfm_process
 
 import data_io
 
@@ -203,7 +203,9 @@ def classify_and_regressor_cv(classify_and_regressor_predictor, X, y, fig= 0,K =
         auc = metrics.roc_auc_score(y_cv_classify, clf_preds_proba)
          
         print "AUC (fold %d/%d): %f" % (j+1, K, auc)
-         
+        
+        fpr, tpr, thresholds = metrics.roc_curve(y_cv_classify, clf_preds_proba)
+        
         mean_auc_score += auc
         loss_score = metrics.mean_absolute_error(y_cv, preds)
         print 'cross validation %d: MAE: %f'%(j+1,loss_score)
@@ -225,7 +227,10 @@ def classify_and_regressor_cv(classify_and_regressor_predictor, X, y, fig= 0,K =
         mean_loss_default_score += loss_default_score
         
         if fig :
+            com_stat.classify_predictor_prob_dis(clf_preds_proba)
+            com_stat.roc_curve(fpr, tpr)
             com_stat.target_preds_and_true_dis(preds, y_cv)
+            
         
 
     mean_score /= K

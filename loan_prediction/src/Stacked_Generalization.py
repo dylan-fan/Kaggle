@@ -43,12 +43,8 @@ class Stacked_Generalization(object):
       
         self.stack = stack
        
-#         self.generalizer = linear_model.RidgeCV(
-#             alphas=np.linspace(0, 200), cv=100)
-        
-        self.generalizer = linear_model.LogisticRegression(fit_intercept = False)
-        
-        
+        self.generalizer = linear_model.RidgeCV(
+            alphas=np.linspace(0, 200), cv=100)
         
 
     def _combine_preds(self, X_train, X_cv, y,
@@ -65,47 +61,23 @@ class Stacked_Generalization(object):
         return mean_preds, stack_preds
 
     
-    def _get_model_preds(self, model, X_train, X_predict, y_train, is_cross_preds = 1):
+    def _get_model_preds(self, model, X_train, X_predict, y_train):
        
         """
         Return the model predictions on the prediction set,
        
         """
-        if not is_cross_preds:
-            sample_weight = com_stat.stat_sample_weight(y_train)
+        sample_weight = com_stat.stat_sample_weight(y_train)
+        try:
+            model.fit(X_train, y_train,sample_weight)
             
-            try:
-                model.fit(X_train, y_train,sample_weight)
-                
-            except :
-                print 'sample weight parameter is not legal...'
-                model.fit(X_train, y_train)
-                
-            model_preds = model.predict(X_predict)
+        except :
+            print 'sample weight parameter is not legal...'
+            model.fit(X_train, y_train)
             
-        else:
-            kfold = cross_validation.StratifiedKFold(y_train, 10)
-            stack_preds = []
-           
-          
-            for stage0, stack in kfold:
-                        
-                sample_weight = com_stat.stat_sample_weight(y_train[stage0])
-                try:
-                    model.fit(X_train[stage0], y_train[stage0],sample_weight)
-                    
-                except :
-                    print 'sample weight parameter is not legal...'
-                    model.fit(X_train[stage0], y_train[stage0])
-                    
-                test_y_regressor_preds = model.predict(X_predict)
-                stack_preds.append(test_y_regressor_preds)
-    
-            model_preds = np.median(np.array(stack_preds).T,axis=1)
-            
+        model_preds = model.predict(X_predict)
             
         return model_preds
-    
 
     def _get_model_cv_preds(self, model, X_train, y_train):
       

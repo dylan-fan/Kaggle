@@ -10,6 +10,27 @@ import pylab as pl
 import data_io
 
 
+def roc_curve(fpr, tpr):
+    pl.figure()
+  
+    pl.plot(fpr, tpr)
+    pl.xlabel('fpr')
+    pl.ylabel('tpr')
+    pl.title('ROC')
+    pl.show()
+    pl.close()
+    
+def classify_predictor_prob_dis(preds_prob):
+    pl.figure()  
+    pl.hist(preds_prob,bins =50, log = True, normed = True)
+    pl.xlabel('preds prob')    
+    pl.title('preds prob hist')
+    
+    pl.show()
+    pl.close()
+    
+    
+    
 def feature_importance_stat(feature_importance_li):
     feature_importane_sort_li = []
     for i, item in enumerate(feature_importance_li):
@@ -57,26 +78,32 @@ def get_loss_freqs_dict(y):
     return loss_dis_dict
 
 
-def train_sample_boostrap(train_x ,train_y, is_add_noise = 1):
+def train_sample_boostrap(train_x ,train_y, is_add_noise = 0):
     loss_dis_dict = get_loss_freqs_dict(train_y)
     counts = np.sum(loss_dis_dict.values())
     train_y_new = [] 
     train_y_new.extend(train_y)
     
+    print 'boostrap raw sample:', train_x.shape
     for i in range(len(train_y)):
         loss_count = loss_dis_dict.get(train_y[i])        
         rep_times = 0
-#         if loss_count < 5:
-#             rep_times  = 4
+       
+        if train_y[i] >= 1 and train_y[i] <=10 :
+            rep_times = 3
         
-        if train_y[i] > 10 and train_y[i] < 20:
-            rep_times  = 3
+        if train_y[i] > 10 and train_y[i] < 30:
+            rep_times  = 1
             
         for j in range(rep_times):
             # add gauss noise;
             if is_add_noise:                
                 noise_samp = np.asarray([np.random.normal() * 0.001 for k in range(len(train_x[i]))])
                 sample = train_x[i] + noise_samp
+            
+            else:
+                sample = train_x[i,:]
+                
             train_x = np.vstack((train_x,sample))
             train_y_new.append(train_y[i])
                 
@@ -100,7 +127,7 @@ def target_hist_dis(target_vals):
         
     pl.figure()
     pl.hist(target_vals,bins =50, log = True, normed = True)
-    pl.title('target hist')
+    pl.title('loss hist')
     pl.show()
     pl.close()
     
@@ -187,7 +214,6 @@ def fig_feature(X):
     
     
 if __name__ == '__main__':
-    print np.random.normal()
     
     train_data = data_io.read_train()    
     train_y = train_data['loss'].values

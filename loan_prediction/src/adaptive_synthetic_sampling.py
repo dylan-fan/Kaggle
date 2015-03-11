@@ -57,8 +57,8 @@ def getRis(X,y,indicesMinority,minorityclasslabel,K):
 def get_indicesMinority(y, minorityclasslabel = 1):
     y_new = []
     for i in range(len(y)):
-#         if y[i] > 20 and y[i] < 80:
-        if y[i] == 1:
+        if y[i] > 10 and y[i] < 100:
+#         if y[i] == 1:
             y_new.append(1)
         else:
             y_new.append(0)
@@ -78,7 +78,7 @@ def generateSamples(X, y, minorityclasslabel = 1, K =5):
     
     rlist = getRis(X, y_new, indicesMinority, minorityclasslabel, K)
     ml, ms = get_class_count(y_new)
-    G = getG(ml,ms, beta = 0.5)
+    G = getG(ml,ms, beta = 0.3)
    
     neigh = NearestNeighbors(n_neighbors=K)
     neigh.fit(Xmin)
@@ -90,15 +90,22 @@ def generateSamples(X, y, minorityclasslabel = 1, K =5):
             
         for l in xrange(g):
             ind = random.choice(neighb_indx)
-            s = Xmin[k] + (Xmin[ind]-Xmin[k]) * random.random()
-            syntheticdata_X.append(s)
-            syntheticdata_y.append(ymin[k])
+            theta = random.random()
+            x_new = Xmin[k] + (Xmin[ind]-Xmin[k]) * theta
+            y_new = ymin[k] + (ymin[ind]-ymin[k]) * theta
+            syntheticdata_X.append(x_new)
+            syntheticdata_y.append(y_new)
             
     print 'asyn, raw X size:',X.shape        
     X = np.vstack((X,np.asarray(syntheticdata_X)))
    
     y = np.hstack((y,syntheticdata_y))
+    
+    
+                
     print 'asyn, post X size:',X.shape
+    
+    
     
     return X , y
    

@@ -45,7 +45,7 @@ import os
 import adaptive_synthetic_sampling as adsys
     
 
-
+import random
     
     
 def long_tail_regressor_predictor(train_x, train_y, test_x, stage0_regressor_preds):
@@ -97,7 +97,7 @@ def NonlinearRegression_CV(train_x_regressor, train_y_regressor, test_x_regresso
         
     
 #     train_x_regressor, train_y_regressor = adsys.generateSamples(train_x_regressor, train_y_regressor)
-    kfold = cross_validation.StratifiedKFold(train_y_regressor, 10)
+    kfold = cross_validation.StratifiedKFold(train_y_regressor, 20)
     stack_preds = []
     
     for cv_train_idx, cv_test_idx in kfold:
@@ -143,6 +143,7 @@ def NonlinearRegression(train_x_regressor, train_y_regressor, test_x_regressor):
     
 #     train_x_regressor, train_y_regressor = com_stat.train_sample_boostrap(train_x_regressor, train_y_regressor)
 #     train_x_regressor, train_y_regressor = adsys.generateSamples(train_x_regressor, train_y_regressor)
+#     
     sample_weight = com_stat.stat_sample_weight(train_y_regressor)
     
     try:
@@ -191,9 +192,9 @@ def classify_predictor(train_x, train_y, test_x):
     train_y_classify = np.asarray([1 if item > 0 else 0 for item in train_y])
     
     
-#     clf_model = LogisticRegression(penalty='l1', dual=False, tol=0.0001, 
-#                          C=1e20, fit_intercept=True, intercept_scaling=1.0, 
-#                          class_weight='auto', random_state=None)
+    clf_model = LogisticRegression(penalty='l1', dual=False, tol=0.0001, 
+                         C=1e20, fit_intercept=True, intercept_scaling=1.0, 
+                         class_weight='auto', random_state=None)
 #     
     clf_model = GradientBoostingClassifier(n_estimators=200, learning_rate=0.3,
                                min_samples_split=30, min_samples_leaf= 5)
@@ -228,51 +229,82 @@ def classify_predictor(train_x, train_y, test_x):
     test_y_preds = clf_model.predict(test_x_clf)
     
     # i think here must user cv get train sample preds
-    train_y_preds_proba = get_model_cv_preds(clf_model, train_x_clf, train_y_classify)
+#     train_y_preds_proba = get_model_cv_preds(clf_model, train_x_clf, train_y_classify)
+    train_y_preds_proba = None
     
     
-    
-    return test_y_preds, test_y_preds_proba, train_y_preds_proba
+    return test_y_preds, test_y_preds_proba
 
+
+def get_train_regression_sets(train_x, train_y):
       
-def classify_and_regressor_predictor(train_x, train_y, test_x, threshold = 5):    
-    
-    # classification model ;     
-    test_y_preds, test_y_preds_proba,train_y_preds_proba = classify_predictor(train_x, train_y, test_x)    
-    
-    # regression model;
     train_regressor_index = np.where(train_y >0)[0]
     
     train_x_regressor = train_x[train_regressor_index]
     train_y_regressor = train_y[train_regressor_index] 
-    train_y_preds_proba = train_y_preds_proba[train_regressor_index]     
-    train_x_regressor = feature_generator.get_regressor_features(train_x_regressor,  train_y_preds_proba, is_test = 0)
+    
+    # add little y= 0 sampls;
+    y_zero_index = np.where(train_y == 0)[0]
+#     x_new = []
+#     y_new = []
+#     for i in range(100):
+#         ind = np.random.choice(y_zero_index)        
+#         x_new.append(train_x[ind,:])
+#         y_new.append(train_y[ind])
+#     
+#     
+#     train_x_regressor = np.vstack((train_x_regressor, np.asarray(x_new)))
+#     train_y_regressor = np.hstack((train_y_regressor, y_new))
+    
+    
+    
+    zeor_sample_indx = random.sample(y_zero_index, 300)
+    train_x_regressor = np.vstack((train_x_regressor, train_x[zeor_sample_indx,]))
+    train_y_regressor = np.hstack((train_y_regressor,  train_y[zeor_sample_indx]))
+    
+    return train_x_regressor, train_y_regressor
+
+
+
+def classify_and_regressor_predictor(train_x, train_y, test_x, threshold = 5):    
+    
+    # classification model ;     
+    test_y_preds, test_y_preds_proba = classify_predictor(train_x, train_y, test_x)    
+    
+    # regression model;
+    train_x_regressor, train_y_regressor = get_train_regression_sets(train_x, train_y)    
+    
+            
+    train_x_regressor = feature_generator.get_regressor_features(train_x_regressor,   is_test = 0)
     
     test_regressor_index = np.where(test_y_preds ==  1)[0]    
-    test_x_regressor = test_x[test_regressor_index]
-    test_y_preds_proba_f = test_y_preds_proba[test_regressor_index]
+    test_x_regressor = test_x[test_regressor_index]    
+    
     
     print 'test size:',test_x_regressor.shape
-    test_x_regressor = feature_generator.get_regressor_features(test_x_regressor, test_y_preds_proba_f,is_test = 1)
+    test_x_regressor = feature_generator.get_regressor_features(test_x_regressor, is_test = 1)
     
     train_regressor_non_tail_index = np.where(train_y_regressor <= 100)[0]
     train_x_regressor_non_tail = train_x_regressor[train_regressor_non_tail_index]
     train_y_regressor_non_tail = train_y_regressor[train_regressor_non_tail_index]
     
 #     test_y_regressor_preds = Quantile_Regression(train_x_regressor, train_y_regressor , test_x_regressor)
-    test_y_regressor_preds = NonlinearRegression(train_x_regressor_non_tail, np.log2(train_y_regressor_non_tail), test_x_regressor)
-#     test_y_regressor_preds1 = NonlinearRegression_CV(train_x_regressor_non_tail, train_y_regressor_non_tail, 
-#                                                      test_x_regressor,model_type ='GBR')
+#     test_y_regressor_preds = NonlinearRegression(train_x_regressor_non_tail, np.log2(train_y_regressor_non_tail + 1), test_x_regressor)
+# 
+    test_y_regressor_preds = NonlinearRegression_CV(train_x_regressor_non_tail, np.log2(train_y_regressor_non_tail + 1.0), 
+                                                     test_x_regressor,model_type ='GBR')
+    
 #     test_y_regressor_preds2 = NonlinearRegression_CV(train_x_regressor_non_tail, train_y_regressor_non_tail, 
 #                                                      test_x_regressor,model_type ='ETR')
     
-#     test_y_regressor_preds = test_y_regressor_preds1 * 0.6 + test_y_regressor_preds2 * 0.4
+#     test_y_regressor_preds = test_y_regressor_preds1 
+
 #     test_y_regressor_preds = ensemble_regression_preditor(train_x_regressor_non_tail, train_y_regressor_non_tail, test_x_regressor)
         
     # stage 2: re-regressor long-tail sample;
 #     test_y_regressor_preds = long_tail_regressor_predictor(train_x_regressor, train_y_regressor, test_x_regressor, test_y_regressor_preds)
     
-    test_y_regressor_preds = predict.postprocess_predict(np.power(2,test_y_regressor_preds), threshold = threshold)
+    test_y_regressor_preds = predict.postprocess_predict(np.power(2,test_y_regressor_preds) - 1.0, threshold = threshold)
     
     preds = np.asarray([0.0] * test_x.shape[0])
     
@@ -297,7 +329,7 @@ def classify_and_regressor_model(is_test = 0 ):
     
     train_y = train_data['loss'].values
     
-    threshold = 1
+    threshold = 1.0
     
     if not is_test:
         cv.classify_and_regressor_cv(classify_and_regressor_predictor, train_x, train_y, fig = 1, K =5, threshold = threshold)
